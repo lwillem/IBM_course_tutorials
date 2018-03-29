@@ -18,11 +18,26 @@ if(0==1){
   hello()
 
 
-  install.packages("devtools")
+  #install.packages("devtools")
+  library("devtools")
   devtools::install_github("lwillem/IBMcourseTutorials")
+  library("IBMcourseTutorials")
 
-  data("flu_city_daytype")
+  # install and load data (print locatie)
+  # andere naam gebruiken...
+  setup()
+
+  # load data
+  #flu_city_daytype <- read.table("tutorial_data/flu_city_daytype.csv",sep=',',header=T)
+  # or...
+  #data("flu_city_daytype")
+
+  names(flu_city_daytype)
+
+  # use build-in function
   plot_cummulative_incidence(flu_city_daytype)
+
+
 
 
   all_data <- read.table('./data/flu_city_daytype.csv',sep=',',header=T)
