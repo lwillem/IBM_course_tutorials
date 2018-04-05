@@ -11,8 +11,14 @@
 # DEBUG CODE
 if(0==1){
   rm(list=ls())
-  setup_ibm_workbench()
-  run_flu_city_processing(flu_city_log)
+  flu_city_log2 <- read.table('./data/output_log.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
+  flu_city_log2 <- read.table('./Netlogo/3_Flu/output_log.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
+  run_flu_city_processing(flu_city_log2)
+  # devtools::use_data(flu_city_log,overwrite = T)
+
+  #setup_ibm_workbench()
+  sim_data_log <- flu_city_log2
+
 }
 
 run_flu_city_processing <- function(sim_data_log)
@@ -30,28 +36,28 @@ run_flu_city_processing <- function(sim_data_log)
   abline(v=16.5,lty=2)
   abline(v=20.5,lty=2)
 
-  ## CONTEXT
-  barplot(table(sim_data_log$context),main='context',ylab='frequency')
-
   ## GET AGE CLASSES
   range(sim_data_log$age)
   age_class_threshold <- c(0,18,65,90)
   sim_data_log$age_class <- cut(sim_data_log$age,age_class_threshold,right = FALSE)
   sim_data_log$age_infector_class <- cut(sim_data_log$age_infector,age_class_threshold,right = FALSE)
 
+  ## CONTEXT
+  barplot(table(sim_data_log$context),main='context',xlab='frequency',las=2,horiz = T)
+
   ## INFECTIONS: TOTAL
   print(table(sim_data_log$age_infector_class,sim_data_log$age_class,dnn=c('age infecter','age infected \t\t -- all infections --')))
 
   ## INFECTIONS: HOUSEHOLD
-  sel <- sim_data_log$context == 'houses'
+  sel <- sim_data_log$context == 'household'
   print(table(sim_data_log$age_infector_class[sel],sim_data_log$age_class[sel],dnn=c('age infector','age infected \t\t -- infections at home --')))
 
   ## INFECTIONS: SCHOOL
-  sel <- sim_data_log$context == 'schools'
+  sel <- sim_data_log$context == 'school'
   print(table(sim_data_log$age_infector_class[sel],sim_data_log$age_class[sel],dnn=c('age infector','age infected \t\t -- infections at school--')))
 
   ## INFECTIONS: WORKPLACE
-  sel <- sim_data_log$context == 'workplaces'
+  sel <- sim_data_log$context == 'workplace'
   print(table(sim_data_log$age_infector_class[sel],sim_data_log$age_class[sel],dnn=c('age infector','age infected \t\t -- infections at work --')))
 
   ## SECUNDARY CASES

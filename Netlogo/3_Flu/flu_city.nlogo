@@ -8,7 +8,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-breed [houses house]
+breed [households household]
 breed [workplaces workplace]
 breed [schools school]
 breed [people person]
@@ -35,6 +35,7 @@ globals
   default-household-size
   default-workplace-size
   default-school-size
+  adult-ratio
 
   file-name-log          ;; file to log the transmission events
 ]
@@ -48,14 +49,13 @@ people-own
 
   age
 
-  loc_house           ;; location of the household
-  loc_daytime         ;; location to spent daytime
-  target              ;; geograpic location of the current location
+  household_site      ;; The persons' household
+  daytime_site        ;; The site (school/workplace) where a person will spent his/her daytime
 ]
 
 patches-own
 [
- meaning
+ context
 ]
 ;;; SETUP PROCEDURES
 
@@ -77,8 +77,10 @@ to setup
   set hour-stay-home 21
 
   set default-household-size 4
-  set default-workplace-size 50
-  set default-school-size 200
+  set default-workplace-size 40
+  set default-school-size 150
+
+  set adult-ratio 2 / default-household-size  ;; Each household has 2 adults
 
   setup-patches
   setup-buildings
@@ -100,49 +102,49 @@ end
 ;; initialize the paches
 to setup-patches
 
-    ask patches [ set meaning "vacant" ]
+    ask patches [ set context "community" ]
 
 end
 
 ;; initialize the buildings
 to setup-buildings
 
-  set-default-shape houses "house"
+  set-default-shape households "house"
   set-default-shape workplaces "house ranch"
   set-default-shape schools "house two story"
 
   ;; create workplaces
   ;; note: we should estimate the number of adults first... now the number of workplaces calculated on {adults+children}
-  ask n-of (round initial-people / default-workplace-size) patches with [ meaning = "vacant" ]
+  ask n-of (round (initial-people * adult-ratio) / default-workplace-size) patches with [ context = "community" ]
   [
    sprout-workplaces 1 [
       set color yellow
       set size 3
     ]
-    set meaning "workplace"
-    ask neighbors [set meaning "industry"]  ;; prevent new buildings around the workplace
+    set context "workplace"
+    ask neighbors [set context "workplace"]  ;; prevent new buildings around the workplace
   ]
 
   ;; create schools
   ;; note: idem...
-  ask n-of (round initial-people / default-school-size) patches with [ meaning = "vacant" ]
+  ask n-of (round (initial-people * (1 - adult-ratio)) / default-school-size) patches with [ context = "community" ]
   [
    sprout-schools 1 [
       set color gray
       set size 3
     ]
-    set meaning "school"
-    ask neighbors [set meaning "school"] ;; prevent new buildings around the school
+    set context "school"
+    ask neighbors [set context "school"] ;; prevent new buildings around the school
   ]
 
   ;; create households
-  ask n-of (round initial-people / default-household-size) patches with [ meaning = "vacant" ]
+  ask n-of (round initial-people / default-household-size) patches with [ context = "community" ]
   [
-   sprout-houses 1 [
+   sprout-households 1 [
       set color brown
       set size 2
     ]
-    set meaning "residence"
+    set context "household"
   ]
 end
 
@@ -151,19 +153,20 @@ to setup-people
   set-default-shape people "person"
 
   ;; create people, per household
-  ask houses
+  ask households
   [
     let num-adults 0                            ;; counter for the adults in a household
 
     ;; create a person
-    ;sprout-people default-household-size [
     hatch-people default-household-size [
 
+    ;; Default characteristics
     set susceptible? true
     set recovered? false
     set infected? false
     set size 1
 
+    ;; Set age, so each household has 2 adults and 2 children
     ifelse num-adults < 2
       [ ;; adult
         set age (random (age-max - age-adult) + age-adult)
@@ -178,18 +181,17 @@ to setup-people
     if (random-float 1) < seed-infected-probability
        [ start-infection ]
 
-    if age < age-adult
-    [ set shape "person student" ]
+    ;; Update person color
     assign-color
 
-    ;set loc_house one-of houses
-    ;set loc_house one-of (houses-on patch-here)  ;
-    set loc_house myself
+    ;; Set current location and assign individual to a school/workplace
+    set household_site myself
     ifelse age < age-adult
-    [ set loc_daytime one-of schools ]
-    [ set loc_daytime one-of workplaces ]
+    [ set daytime_site one-of schools ]
+    [ set daytime_site one-of workplaces ]
 
-   set target loc_house
+    ;; Set current target
+    ;set current_site household_site
     ]
   ]
 
@@ -222,30 +224,33 @@ to move  ;; people procedure
 
     if current-hour = hour-leave-home
       [
-         move-to loc_daytime
-         set target loc_daytime
+         move-to daytime_site
+         ;set current_site daytime_site
       ]
 
     if current-hour = hour-go-home or current-hour = hour-stay-home
       [
-         move-to loc_house
-         set target loc_house
+         move-to household_site
+         ;set current_site household_site
       ]
 
     if current-hour >= hour-leave-home and current-hour < hour-stay-home
       [
-         face target
          right random-float 180
          left  random-float 180
          fd 1
-      ]
 
+      if current-hour < hour-go-home and [context] of patch-here != [context] of daytime_site
+      [
+         back 1
+      ]
+      ]
 end
 
 ;; Transmission can occur to any susceptible on same patch
 to transmit  ;; people procedure
 
-     ;; check susceptibles on the same pach
+     ;; Check susceptibles on the same pach
      let nearby-uninfected (people-on patch-here) with [ susceptible? ]
 
      if any? nearby-uninfected
@@ -255,7 +260,6 @@ to transmit  ;; people procedure
           [
            start-infection
            log-transmission-event myself self
-
          ]
       ]
      ]
@@ -313,7 +317,8 @@ to log-transmission-event [agent1 agent2]
   file-open file-name-log
   file-write current-day
   file-write current-hour
-  file-write [breed] of [target] of agent1
+  ;file-write [breed] of [current_site] of agent1
+  file-write [context] of agent1
   file-write ticks
   file-write [age] of agent1
   file-write [age] of agent2
@@ -394,7 +399,7 @@ initial-people
 initial-people
 50
 1000
-520.0
+950.0
 5
 1
 NIL
@@ -444,7 +449,7 @@ beta
 beta
 0
 0.02
-0.005
+0.004
 0.001
 1
 NIL
@@ -515,7 +520,7 @@ num-days
 num-days
 0
 300
-67.0
+48.0
 1
 1
 NIL
@@ -1283,7 +1288,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
