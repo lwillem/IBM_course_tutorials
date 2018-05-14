@@ -5,7 +5,7 @@ mosquitoes-own [
   is_susceptible
   is_exposed
   is_infectious
-  days_infected ; this is a new variable, so that we can keep track of how long a mosquito has been in the latent exposed phase.
+  days_infected   ;; to keep track how long a mosquito has been in the latent exposed phase
 ]
 
 people-own [
@@ -18,127 +18,140 @@ people-own [
 globals [
 
   d_exposed
-  ;d_symptomatic ; now a slider
-  ;d_asymptomatic ; now a slider
+  ;d_symptomatic  ;; slider
+  ;d_asymptomatic ;; slider
 
   mosquito_d_exposed
-  ;mosquito_daily_survival_prob ; a slider
-  ;mosquito_radius ; now a slider
+  ;mosquito_daily_survival_prob  ;; slider
+  ;mosquito_radius               ;; slider
 
-  ;transmission_likelihood_symptomatic ; now a slider
-  ;transmission_likelihood_asymptomatic ; now a slider
+  ;transmission_likelihood_symptomatic  ;; slider
+  ;transmission_likelihood_asymptomatic ;; slider
 
   mosquito_velocity
-  person_velocity
 
   total-infected-people
   total-infected-mosquitoes
+  malaria-incidence
 ]
 
 to setup
 
   clear-all  ;; clear all patches and turtles
-  ; the unit of time in this model is days
-  set d_exposed 12 ; average number of days before becoming symptomatic (and in this case the only number of days)
-  ;set d_symptomatic 5
-  ;set d_asymptomatic 200
+  ;; the unit of time in this model is days
 
+  ;; person parameters
+  set d_exposed 12 ;; average number of days before becoming symptomatic (and/or the exact number of days)
+  ;set d_symptomatic 5     ;; slider
+  ;set d_asymptomatic 200  ;; slider
+
+  ;; mosquito parameters
   set mosquito_d_exposed 12
-  ;set mosquito_life_expectancy 7.6
-  ;set mosquito_radius 1.5;0.5
-
-  ;set transmission_likelihood_symptomatic 0.4
-  ;set transmission_likelihood_asymptomatic 0.12
-
   set mosquito_velocity 2
-  set person_velocity 0
+  ;set mosquito_life_expectancy 7.6  ;; slider
+  ;set mosquito_radius 1.5           ;; slider
 
-  set total-infected-people 0
-  set total-infected-mosquitoes 0
+  ;; transmission parameters
+  ;set transmission_likelihood_symptomatic 0.4     ;; slider
+  ;set transmission_likelihood_asymptomatic 0.12   ;; slider
 
   ;; init people
   set-default-shape people "person"
   create-people initial-number-people [
     set color green
-    setxy random-xcor random-ycor ;they are spread out randomly
+    setxy random-xcor random-ycor   ;; they are located randomly
 
-    set is_susceptible true
-    set is_exposed false
-    set is_symptomatic false
+    set is_susceptible  true
+    set is_exposed      false
+    set is_symptomatic  false
     set is_asymptomatic false
 
-    if who < initial-sick-people [
-      start-infection
-    ] ; these people start off with malaria
+  ]
 
+  ;; some people start off with malaria
+  ask n-of initial-sick-people people
+  [
+    start-infection
   ]
 
   ;; init mosquitoes
   set-default-shape mosquitoes "mosquito"
-  create-mosquitoes initial-number-mosquitoes / 2 ; only females matter for malaria
+  create-mosquitoes initial-number-mosquitoes / 2 ;; only females matter for malaria
   [
     set color green - 3
     setxy random-xcor random-ycor
 
     set is_susceptible true
-    set is_exposed false
-    set is_infectious false
+    set is_exposed     false
+    set is_infectious  false
 
   ]
 
+  ;; logging parameters
+  set total-infected-people initial-sick-people
+  set total-infected-mosquitoes 0
+  set malaria-incidence 0
+
   reset-ticks
- end
+end
 
 ;; main method
 to go
+
+  set malaria-incidence 0
+
   if ticks = 10 * 365
   [ stop ]
   move-mosquitoes
   move-people
 
-  update-people
   update-mosquitoes
+  update-people
 
   tick
 end
 
 
-
+;; method to keep handle the transmission from people to musquitoes
 to move-people
   ask people
   [
-    rt random 360 ;people move around the world randomly
-    fd person_velocity
-
-    if is_symptomatic  ;if people are infectious they will infect mosquitoes who bite them
-    [
-        ask mosquitoes in-radius mosquito_radius with [is_susceptible and
+    if is_symptomatic  ;; if people are symptomatic, they can infect mosquitoes who bite them
+    [ ask mosquitoes in-radius mosquito_radius with [is_susceptible and
           random-float 1 < (bite-likelihood * transmission_likelihood_symptomatic)]
-        [ start-infection
-          set total-infected-mosquitoes (total-infected-mosquitoes + 1) ]
+        [
+          start-infection
+          set total-infected-mosquitoes (total-infected-mosquitoes + 1)
+        ]
     ]
 
-    if is_asymptomatic  ;if people are infectious they will infect mosquitoes who bite them
-    [
-        ask mosquitoes in-radius mosquito_radius with [is_susceptible and
+    if is_asymptomatic  ;; if people are asymptomatic infectious, they can infect mosquitoes who bite them
+    [ ask mosquitoes in-radius mosquito_radius with [is_susceptible and
           random-float 1 < (bite-likelihood * transmission_likelihood_asymptomatic)]
-        [ start-infection
-          set total-infected-mosquitoes (total-infected-mosquitoes + 1) ]
+        [
+          start-infection
+        ]
     ]
  ]
 end
 
+;; method to keep handle the transmission from musquitoes to people
 to move-mosquitoes
   ask mosquitoes
-  [ rt random 100
+  [
+    ;; move around
+    rt random 100
     lt random 100
     fd mosquito_velocity
 
-    if is_infectious ;if mosquitoes are infectious, they can infect people
-      [ask people in-radius mosquito_radius with [is_susceptible and
+    ;; infection process
+    if is_infectious  ;; if mosquitoes are infectious, they can infect people
+      [
+        ask people in-radius mosquito_radius with [is_susceptible and
           random-float 1 < bite-likelihood]
-                [ start-infection
-                  set total-infected-people (total-infected-people + 1) ]
+                [
+                  start-infection
+                ]
       ]
   ]
 end
@@ -147,22 +160,24 @@ end
 to update-people
 
   ask people [
-    if is_exposed[ set color yellow ]
 
     if is_asymptomatic and random-float 1 < (1 / d_asymptomatic ) ; geometric distribution: average number of times until "success" is 1/prob(success).
-    [ set is_asymptomatic false
+    [
+      set is_asymptomatic false
       set is_susceptible true
       set color green
     ]
 
     if is_symptomatic and random-float 1 < (1 / d_symptomatic ) ; geometric distribution: average number of times until "success" is 1/prob(success).
-    [ set is_symptomatic false
+    [
+      set is_symptomatic false
       set is_asymptomatic true
       set color blue
     ]
 
     if is_exposed and random-float 1 < (1 / d_exposed ) ; geometric distribution: average number of times until "success" is 1/prob(success).
-    [ set is_exposed false
+    [
+      set is_exposed false
       set is_symptomatic true
       set color red
     ]
@@ -174,11 +189,11 @@ to update-mosquitoes
 
   ask mosquitoes [
 
-    if is_exposed [ set color orange - 3 ]
-
-    ; the old formula was: if is_exposed and random-float 1 < (1 / mosquito_d_exposed ) ; geometric distribution: average number of times until "success" is 1/prob(success).
-    if is_exposed and days_infected = mosquito_d_exposed ; fixed duration of latent exposed phase.
-    [ set is_exposed false
+    ;; the old formula was:
+    if is_exposed and random-float 1 < (1 / mosquito_d_exposed ) ; geometric distribution: average number of times until "success" is 1/prob(success).
+    ;if is_exposed and days_infected = mosquito_d_exposed ; fixed duration of latent exposed phase.
+    [
+      set is_exposed false
       set is_infectious true
       set color red - 3
     ]
@@ -189,22 +204,19 @@ to update-mosquitoes
     [ die ]
   ]
 
-  let day-of-year (ticks mod 365) ; mod is the modulo: the remainder after dividing ticks by 365.
-  let season-factor (1 + sin (day-of-year / 365 * 360) ) ; the season-factor ranges between 0 and 2
+  let day-of-year (ticks mod 365)                        ;; mod is the modulo: the remainder after dividing ticks by 365.
+  let season-factor (1 + sin (day-of-year / 365 * 360) ) ;; the season-factor ranges between 0 and 2
 
-  ; half of the year, the birth rate of mosquitoes is larger than the death rate, the other half it is smaller
+  ;; half of the year, the birth rate of mosquitoes is larger than the death rate, the other half it is smaller
   create-mosquitoes initial-number-mosquitoes * (1 - mosquito_daily_survival_prob) * season-factor
   [
     set color green - 3
     setxy random-xcor random-ycor
-    ;setxy random-float 2 random-float 2
 
     set is_susceptible true
     set is_exposed false
     set is_infectious false
   ]
-
-
 
 end
 
@@ -212,8 +224,19 @@ end
 to start-infection
   set is_susceptible false
   set is_exposed true
+
+  if breed = people
+  [
+    set color orange
+    set total-infected-people (total-infected-people + 1)
+    set malaria-incidence (malaria-incidence + 1)
+  ]
+
   if breed = mosquitoes
-    [ set days_infected 0 ]
+    [
+      set days_infected 0
+      set color orange - 3
+    ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -278,55 +301,55 @@ NIL
 1
 
 SLIDER
-888
-464
-1087
-497
+23
+162
+222
+195
 initial-number-mosquitoes
 initial-number-mosquitoes
 100
 300
-200.0
+276.0
 2
 1
 NIL
 HORIZONTAL
 
 SLIDER
-19
-110
-217
-143
+21
+79
+219
+112
 initial-sick-people
 initial-sick-people
 1
 60
-30.0
+20.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-888
-189
-1086
-222
+885
+286
+1085
+319
 bite-likelihood
 bite-likelihood
 0.6
 0.8
-0.7
+0.6
 .1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-238
-122
-338
-167
+254
+86
+354
+131
 symptomatic
 count people with [is_symptomatic]
 17
@@ -344,7 +367,7 @@ count
 0.0
 365.0
 0.0
-100.0
+10.0
 true
 true
 "" ""
@@ -363,7 +386,7 @@ Mosquitoes
 days
 count
 0.0
-10.0
+365.0
 0.0
 10.0
 true
@@ -375,25 +398,25 @@ PENS
 "infectious" 1.0 0 -2674135 true "" "plot count mosquitoes with [is_infectious]"
 
 SLIDER
-19
-195
-217
-228
+23
+120
+221
+153
 initial-number-people
 initial-number-people
 0
 1000
-200.0
+610.0
 5
 1
 NIL
 HORIZONTAL
 
 MONITOR
-235
-180
-335
-225
+254
+139
+354
+184
 asymptomatic
 count people with [is_asymptomatic]
 17
@@ -401,10 +424,10 @@ count people with [is_asymptomatic]
 11
 
 PLOT
-887
-16
-1087
-166
+886
+11
+1086
+135
 Malaria prevalence (%)
 NIL
 NIL
@@ -419,15 +442,15 @@ PENS
 "default" 1.0 0 -2674135 true "" "plot 100 * count people with [is_symptomatic] / count people"
 
 SLIDER
-888
-233
-1087
-266
+886
+323
+1085
+356
 mosquito_daily_survival_prob
 mosquito_daily_survival_prob
-0.7
+0.5
 0.95
-0.95
+0.65
 0.05
 1
 NIL
@@ -435,14 +458,14 @@ HORIZONTAL
 
 SLIDER
 887
-280
+359
 1088
-313
+392
 transmission_likelihood_symptomatic
 transmission_likelihood_symptomatic
 0
 1
-0.9
+0.7
 0.1
 1
 NIL
@@ -450,24 +473,24 @@ HORIZONTAL
 
 SLIDER
 888
-324
+394
 1088
-357
+427
 transmission_likelihood_asymptomatic
 transmission_likelihood_asymptomatic
 0
 1
-0.12
+0.2
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-889
-370
-1087
-403
+888
+430
+1086
+463
 d_asymptomatic
 d_asymptomatic
 100
@@ -479,15 +502,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-888
-419
-1087
-452
+889
+467
+1088
+500
 d_symptomatic
 d_symptomatic
 5
 20
-10.0
+9.0
 1
 1
 NIL
@@ -495,9 +518,9 @@ HORIZONTAL
 
 SLIDER
 888
-511
+505
 1088
-544
+538
 mosquito_radius
 mosquito_radius
 0.5
@@ -507,6 +530,46 @@ mosquito_radius
 1
 NIL
 HORIZONTAL
+
+MONITOR
+254
+33
+353
+78
+infected
+count people with [not is_susceptible]
+17
+1
+11
+
+MONITOR
+254
+189
+354
+234
+Incidence
+malaria-incidence
+17
+1
+11
+
+PLOT
+887
+142
+1087
+262
+Malaria Incidence (%)
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot malaria-incidence / count people * 100"
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -913,7 +976,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0
+NetLogo 6.0.3
 @#$#@#$#@
 setup
 repeat 2 [ move-fish ]
@@ -940,11 +1003,12 @@ repeat 2 [ move-fish ]
     <steppedValueSet variable="transmission_likelihood_asymptomatic" first="0" step="0.1" last="0.4"/>
     <steppedValueSet variable="transmission_likelihood_symptomatic" first="0.4" step="0.2" last="1"/>
   </experiment>
-  <experiment name="fixed" repetitions="20" runMetricsEveryStep="false">
+  <experiment name="fixed" repetitions="20" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
     <metric>total-infected-mosquitoes</metric>
     <metric>total-infected-people</metric>
+    <metric>malaria-incidence</metric>
     <steppedValueSet variable="mosquito_daily_survival_prob" first="0.7" step="0.05" last="0.95"/>
   </experiment>
 </experiments>
