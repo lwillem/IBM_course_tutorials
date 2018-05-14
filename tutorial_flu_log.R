@@ -25,7 +25,7 @@ process_flu_city_log(flu_city_daytype_log_weekends)
 process_flu_city_log(flu_city_daytype_log_holiday)
 
 # FYI
-malaria_data <- ?get_malaria_incidence_peru()
+malaria_data <- get_malaria_incidence_peru()
 
 
 
