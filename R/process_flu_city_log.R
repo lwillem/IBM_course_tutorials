@@ -53,7 +53,11 @@ process_flu_city_log <- function(sim_data_log)
   {
     sim_data_log$sec_cases[i] <- sum(sim_data_log$id_infector == sim_data_log$id[i])
   }
-  boxplot(sim_data_log$sec_cases ~ sim_data_log$day,outline=F,xlab='days',ylab='secundary cases',main='secundary cases')
+  boxplot(sim_data_log$sec_cases ~ sim_data_log$day, outline=F,xlab='days',ylab='secundary cases',main='secundary cases')
+
+  mean_cases <- aggregate(sec_cases ~ day, data=sim_data_log ,mean)
+  lines(mean_cases$day+1,mean_cases$sec_cases,type='l',lwd=2,col=2)
+  legend('topright','mean',lwd=2,col=2)
 
   # set plot panels back to default
   par(mfrow=c(1,1))

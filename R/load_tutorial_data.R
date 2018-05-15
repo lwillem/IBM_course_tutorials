@@ -12,8 +12,9 @@ load_tutorial_data <- function(){
   data('flu_city_daytype_log_both',     package = 'IBMcourseTutorials')
   data('flu_city_daytype_log_weekdays', package = 'IBMcourseTutorials')
   data('flu_city_daytype_log_weekends', package = 'IBMcourseTutorials')
-  data('flu_city_daytype_log_holiday',  package = 'IBMcourseTutorials')
-  data('flu_city_experiment_table_tutorial',  package = 'IBMcourseTutorials')
+  data('flu_city_vaccine_log',          package = 'IBMcourseTutorials')
+  data('flu_stochastic_tutorial',       package = 'IBMcourseTutorials')
+  data('flu_city_vaccine_exploration_tutorial',  package = 'IBMcourseTutorials')
 }
 
 
@@ -46,9 +47,6 @@ load_tutorial_data <- function(){
 
 prepare_data <- function(){
 
-  flu_city_daytype <- read.table('./data/flu_city_daytype.csv',sep=',',header=T)
-  devtools::use_data(flu_city_daytype,overwrite = T)
-
   flu_city_log <- read.table('./data/flu_city_log.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
   devtools::use_data(flu_city_log,overwrite = T)
 
@@ -61,18 +59,15 @@ prepare_data <- function(){
   flu_city_daytype_log_weekends <- read.table('./data/flu_city_daytype_log_weekend.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
   devtools::use_data(flu_city_daytype_log_weekends,overwrite = T)
 
-  flu_city_daytype_log_holiday <- read.table('./data/flu_city_daytype_log_holiday.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
-  devtools::use_data(flu_city_daytype_log_holiday,overwrite = T)
+  flu_city_vaccine_log <- read.table('./data/flu_city_vaccine_log.csv',sep=' ',header=T,row.names=NULL,stringsAsFactors = F)
+  devtools::use_data(flu_city_vaccine_log,overwrite = T)
 
-  flu_city_experiment_table_tutorial <- load_experiment_table('./data/flu_city_experiment_table_tutorial.csv')
-  devtools::use_data(flu_city_experiment_table_tutorial,overwrite = T)
+  flu_stochastic_tutorial <- load_behaviorspace_table('./data/flu_city_vaccine_stochastic_table.csv')
+  devtools::use_data(flu_stochastic_tutorial,overwrite = T)
 
-  data('flu_city_log',                      package = 'IBMcourseTutorials')
-  data('flu_city_daytype_log_both',         package = 'IBMcourseTutorials')
-  data('flu_city_daytype_log_weekdays',     package = 'IBMcourseTutorials')
-  data('flu_city_daytype_log_weekends',     package = 'IBMcourseTutorials')
-  data('flu_city_daytype_log_holiday',      package = 'IBMcourseTutorials')
-  data('flu_city_experiment_table_tutorial',package = 'IBMcourseTutorials')
+  flu_city_vaccine_exploration_tutorial <- load_behaviorspace_table('./data/flu_city_vaccine_exploration_tutorial.csv')
+  devtools::use_data(flu_city_vaccine_exploration_tutorial,overwrite = T)
+
 }
 
 

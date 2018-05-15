@@ -8,5 +8,4 @@ Description: This package is created to facilitate the 5-day course "Individual-
 License: GNU GPL v3
 Encoding: UTF-8
 LazyData: false
-Imports:
-    randomForest
+Imports: randomForest, scales

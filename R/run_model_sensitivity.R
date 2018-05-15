@@ -12,6 +12,8 @@ library('randomForest')
 
 run_model_sensitivity <- function(input_data,output_data,output_tag){
 
+  require(randomForest)
+
   # set plot panels, based on the number of input variables
   if(ncol(input_data)<=3)      { par(mfrow=c(2,2)) }
   else if(ncol(input_data)<=6) { par(mfrow=c(2,3)) }
