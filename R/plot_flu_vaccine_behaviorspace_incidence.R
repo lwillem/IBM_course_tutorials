@@ -5,9 +5,10 @@
 # by Wim Delva and Lander Willem.
 #
 ###############################################################
-library(scales)
 
 plot_flu_vaccine_behaviorspace_incidence <- function(sim_data){
+
+  require(scales)
 
   # aggregate per day
   sim_data <- aggregate(. ~ X.run.number. + current_day ,data=sim_data[,-7],mean)

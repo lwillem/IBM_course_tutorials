@@ -6,14 +6,32 @@
 #
 ###############################################################
 
-# clear workspalce
+#### SET WORK DIRECTORY (ONCE)
+## option 1
+## open RStudio with this script => sets the work directory automaticaly
+## option 2 (WINDOWS)
+# setwd("C:\\User\\path\\to\\the\\rcode\\folder") ## WINDOWS
+## option 3 (MAC)
+# setwd("/Users/path/to/the/rcode/folder")        ## MAC
+## option 4
+## use the directory of the current file if you use "source"
+src_directory <- getSrcDirectory(function(dummy) {dummy})
+setwd(ifelse(nchar(src_directory) > 0, src_directory, '.'))
+
+## INSTALL THE FOLLOWING PACKAGES (ONCE)
+# install.packages("devtools")
+# library("devtools")
+# devtools::install_github("lwillem/IBMcourseTutorials")
+
+## CLEAR WORKSPACE (GLOBAL ENVIRONMENT)
 rm(list=ls())
 
-#install.packages("devtools")
-#library("devtools")
-#devtools::install_github("lwillem/IBMcourseTutorials")
+## LOAD THE COURSE PACKAGE
 library("IBMcourseTutorials")
 
+########################################
+## FLU MODEL: LOG FILE                ##
+########################################
 # load tutorial data
 load_tutorial_data()
 
@@ -28,11 +46,14 @@ process_flu_city_log(flu_city_vaccine_log)
 # sim_data_log <- load_flu_log_file('./flu_city_vaccine_log.csv')
 # process_flu_city_log(sim_data_log)
 
-# FYI
+########################################
+## FYI: MALARIA REFERENCE DAT         ##
+########################################
 malaria_data <- get_malaria_reference_data()
 
+
 ########################################
-## STOCHASTIC EFFECT                  ##
+## FLU MODEL: STOCHASTIC EFFECT       ##
 ########################################
 # LOAD FLU_VACCINE TUTORIAL DATA
 sim_bs_data <- flu_stochastic_tutorial
@@ -49,7 +70,7 @@ unique(sim_data[,3:9])
 plot_flu_vaccine_behaviorspace_incidence(sim_data)
 
 ########################################
-## COST-EFFECTIVENESS ANALYSIS        ##
+## FLU: COST-EFFECTIVENESS ANALYSIS   ##
 ########################################
 # source: De Boer et al. The cost-effectiveness of trivalent and quadrivalent
 # influenza vaccination in communities in South Africa, Vietnam and Australia.
@@ -58,13 +79,16 @@ plot_flu_vaccine_behaviorspace_incidence(sim_data)
 cost_dose              <- 53
 cost_delivery          <- 25
 cost_outpatient        <- 120
-#note: we assume no hospital admissions
+#note: we assume no hospital admissions at this point
 # vaccine efficacy: 65%
 
-# load data (only final states)
-sim_bs_data <- load_behaviorspace_table('/Users/lwillem/Desktop/3_Flu/NetLogoOutput/flu_city_vaccine_coverage_table.csv')
+# load behaviorspace data
+ sim_bs_data <- flu_city_vaccine_coverage_tutorial
 
-# to be sure: select final output
+# # load your own data data (only final states)
+# sim_bs_data <- load_behaviorspace_table('flu_city_vaccine_coverage_table.csv')
+
+# To be sure: select final output
 flag         <- sim_bs_data$X.step. == max(sim_bs_data$X.step.)
 sim_data     <- sim_bs_data[flag,]
 
@@ -107,4 +131,4 @@ program_coverage <- program_coverage[program_coverage>0]
 boxplot(program_icer ~ program_coverage,
      xlab='vaccine coverage',
      ylab='Incremental Cost-Effectiveness Ratio (ICER)',outline=F)
-
+abline(h=0,lty=2)

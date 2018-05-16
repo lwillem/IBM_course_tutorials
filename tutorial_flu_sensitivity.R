@@ -6,12 +6,27 @@
 #
 ###############################################################
 
-# clear workspace environment
+#### SET WORK DIRECTORY (ONCE)
+## option 1
+## open RStudio with this script => sets the work directory automaticaly
+## option 2 (WINDOWS)
+# setwd("C:\\User\\path\\to\\the\\rcode\\folder") ## WINDOWS
+## option 3 (MAC)
+# setwd("/Users/path/to/the/rcode/folder")        ## MAC
+## option 4
+## use the directory of the current file if you use "source"
+src_directory <- getSrcDirectory(function(dummy) {dummy})
+setwd(ifelse(nchar(src_directory) > 0, src_directory, '.'))
+
+## INSTALL THE FOLLOWING PACKAGES (ONCE)
+# install.packages("devtools")
+# library("devtools")
+# devtools::install_github("lwillem/IBMcourseTutorials")
+
+## CLEAR WORKSPACE (GLOBAL ENVIRONMENT)
 rm(list=ls())
 
-#install.packages("devtools")
-library("devtools")
-#devtools::install_github("lwillem/IBMcourseTutorials")
+## LOAD THE COURSE PACKAGE
 library("IBMcourseTutorials")
 
 ###############################################################

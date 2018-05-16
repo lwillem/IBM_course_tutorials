@@ -15,6 +15,8 @@ load_tutorial_data <- function(){
   data('flu_city_vaccine_log',          package = 'IBMcourseTutorials')
   data('flu_stochastic_tutorial',       package = 'IBMcourseTutorials')
   data('flu_city_vaccine_exploration_tutorial',  package = 'IBMcourseTutorials')
+  data('flu_city_vaccine_coverage_tutorial',     package = 'IBMcourseTutorials')
+
 }
 
 
@@ -67,6 +69,10 @@ prepare_data <- function(){
 
   flu_city_vaccine_exploration_tutorial <- load_behaviorspace_table('./data/flu_city_vaccine_exploration_tutorial.csv')
   devtools::use_data(flu_city_vaccine_exploration_tutorial,overwrite = T)
+
+  flu_city_vaccine_coverage_tutorial <- load_behaviorspace_table('./data/flu_city_vaccine_coverage_tutorial.csv')
+  devtools::use_data(flu_city_vaccine_coverage_tutorial,overwrite = T)
+
 
 }
 
