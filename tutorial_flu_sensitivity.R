@@ -28,6 +28,7 @@ rm(list=ls())
 
 ## LOAD THE COURSE PACKAGE
 library("IBMcourseTutorials")
+library('randomForest')
 
 ###############################################################
 ## EXAMPLE 1: linear function
